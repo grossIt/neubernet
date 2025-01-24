@@ -23,9 +23,9 @@ def import_path_file(filename, expected_num_columns=3):
     with open(filename, "r") as file:
         for line in file:
             # Split the line by tabs
-            parts = line.strip().split(" ")
+            parts_temp = line.strip().split(" ")
             # Remove empty strings
-            parts = [x for x in parts if x]
+            parts = [x for x in list(parts_temp) if x]
             # Check if the number of columns is consistent and if all elements are numbers
             if (
                 len(parts) == expected_num_columns

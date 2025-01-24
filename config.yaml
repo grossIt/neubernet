@@ -214,7 +214,7 @@ target_var_dict:
 # YieldNet-specific Training parameters
 yield_num_epochs: 1000  # Number of epochs for training
 yield_batch_size: 4096  # Batch size for the optimizer
-yield_learning_rate: 1e-4  # Learning rate for the optimizer
+yield_learning_rate: 1e-5  # Learning rate for the optimizer
 yield_weight_decay: 1e-4  # Weight decay for the optimizer
 yield_cosine_annealing: True  # If True, uses cosine annealing for the learning rate
 yield_log_eps: 1e-6  # Epsilon for the logarithmic transformation of  \frac{\sigma_eq}{\sigma_Y}

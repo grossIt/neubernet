@@ -1,0 +1,17 @@
+/database/preprocessed
+/fem/bcs
+/fem/freemesh_bcs
+/fem/inputs
+/fem/meshes
+/fem/results
+/fem/shaft_3d
+/model/partial_results
+/validation/freemesh_data
+
+/validation/metrics
+
+/figures/*.pdf
+/figures/*.svg
+
+/validation/*.pdf
+/validation/*.svg

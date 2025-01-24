@@ -25,7 +25,9 @@ neubernet_metrics = pd.read_pickle("metrics/neubernet_global_metrics.pkl")
 files = os.listdir("freemesh_data")
 
 # Check if the files are pickle files and whether freemesh is in the name
-files = [file for file in files if ".pkl" in file and "freemesh" in file]
+files = [
+    file for file in files if ".pkl" in file and "freemesh" in file and "global" in file
+]
 
 # Element size is the last number of the file name
 element_sizes = [int(file.split(".")[0].split("_")[-1]) for file in files]
@@ -94,20 +96,31 @@ for column1, column2, column3 in zip(
     rms_error.columns, rms_error_on_max_values.columns, max_error_on_max_values.columns
 ):
     fig, ax = plt.subplots(figsize=(5, 5))
-    ax.plot(rms_error.index, rms_error[column1], label="RMS error (global)")
+    ax.plot(
+        rms_error.index,
+        rms_error[column1],
+        "o-",
+        markersize=3,
+        label="RMS error (global)",
+    )
     ax.plot(
         rms_error_on_max_values.index,
         rms_error_on_max_values[column2],
+        "o-",
+        markersize=3,
         label="RMS error on max values",
     )
-    # ax.plot(
-    #     max_error_on_max_values.index,
-    #     max_error_on_max_values[column3],
-    #     label="Max abs error on max values",
-    # )
+    ax.plot(
+        max_error_on_max_values.index,
+        max_error_on_max_values[column3],
+        "o-",
+        markersize=3,
+        label="Max abs error on max values",
+    )
     ax.set_title(column1)
     ax.set_xlabel("Element size / $R_{notch}$")
     ax.set_ylabel("Error")
-    ax.legend()
+    ax.grid(which="both")
+    ax.legend(loc="upper left")
 
     plt.show()
