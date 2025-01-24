@@ -219,7 +219,7 @@ yield_weight_decay: 1e-4  # Weight decay for the optimizer
 yield_cosine_annealing: True  # If True, uses cosine annealing for the learning rate
 yield_log_eps: 1e-6  # Epsilon for the logarithmic transformation of  \frac{\sigma_eq}{\sigma_Y}
 
-# SignNet-specific Training parameters
+# SignSVM-specific Training parameters
 sign_num_epochs: 100  # Number of epochs for training
 sign_batch_size: 4096  # Batch size for the optimizer
 sign_learning_rate: 1e-4  # Learning rate for the optimizer
