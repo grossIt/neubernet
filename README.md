@@ -64,9 +64,9 @@ neubernet/
 ├── model/                
 │   ├── trained
 │   │   ├── neubernet.pt
-│   │   ├── neubernet_accuracies.pt
+│   │   ├── neubernet_losses.pt
 │   │   ├── yieldnet.pt
-│   │   ├── yieldnet_accuracies.pt
+│   │   ├── yieldnet_losses.pt
 │   │   ├── signsvm.pt
 │   │   ├── signsvm_accuracies.pt
 │   ├── utils
