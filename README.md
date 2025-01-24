@@ -19,8 +19,8 @@ by T. Grossi, M. Beghini, and M. Benedetti.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/NeuberNet.git
-   cd NeuberNet
+   git clone https://github.com/grossIt/neubernet
+   cd neubernet
    ```
 
 2. Set up the environment (choose one):
