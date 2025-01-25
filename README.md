@@ -52,7 +52,7 @@ The scripts in the repository are named sequentially (e.g., `s1_generate_input_f
 ```
 neubernet/
 ├── database/                 
-│   ├── utils
+│   ├── utils/
 │   │   ├── file_io.py
 │   ├── s1_generate_input_files.py
 │   ├── s3_import_database.py
@@ -62,21 +62,21 @@ neubernet/
 │   ├── s10_ansys_database_freemesh_macro.mac
 │   ├── s14_simulate_3d_shaft.mac
 ├── model/                
-│   ├── trained
+│   ├── trained/
 │   │   ├── neubernet.pt
 │   │   ├── neubernet_losses.pt
 │   │   ├── yieldnet.pt
 │   │   ├── yieldnet_losses.pt
 │   │   ├── signsvm.pt
 │   │   ├── signsvm_accuracies.pt
-│   ├── utils
+│   ├── utils/
 │   │   ├── definitions.py
 │   │   ├── training.py
 │   ├── s5_neubernet_training.py
 │   ├── s8_yieldnet_training.py
 │   ├── s9_signsvm_training.py
 ├── validation/                 
-│   ├── utils
+│   ├── utils/
 │   │   ├── helper_funcs.py
 │   ├── s6_evaluate_predicted_database.py
 │   ├── s7_plot_analysis.py
