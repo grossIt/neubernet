@@ -73,13 +73,13 @@ neubernet/
 │   │   ├── definitions.py
 │   │   ├── training.py
 │   ├── s5_neubernet_training.py
-│   ├── s8_yieldnet_training.py
-│   ├── s9_signsvm_training.py
+│   ├── s6_yieldnet_training.py
+│   ├── s7_signsvm_training.py
 ├── validation/                 
 │   ├── utils/
 │   │   ├── helper_funcs.py
-│   ├── s6_evaluate_predicted_database.py
-│   ├── s7_plot_analysis.py
+│   ├── s8_evaluate_predicted_database.py
+│   ├── s9_plot_analysis.py
 │   ├── s11_import_freemesh_data.py
 │   ├── s12_evaluate_freemesh_predictions.py
 │   ├── s13_compare_freeemesh_results.py
