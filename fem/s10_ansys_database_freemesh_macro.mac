@@ -1,0 +1,402 @@
+! s10_ansys_database_freemesh_macro.mac
+!
+! Author: T. Grossi
+! E-mail: tommaso.grossi@ing.unipi.it
+! Year: 2025
+!
+! APDL macro that recomputes the entire FE database but using a free mesh with given element size
+
+FINISH
+/CLEAR, START, NEW
+
+/FORMAT, 7, E, 16, 6
+
+! >>>>>>>>>>>> PARAMETERS <<<<<<<<<<<<<<<
+
+elem_size = 5  ! <<<<<< USER INPUT: MESH ELEMENT SIZE
+
+ID_start = 1
+ID_max = 10000
+N_points = 721
+
+*DO, ID, ID_start, ID_max
+
+PARSAV, ALL
+/CLEAR
+PARRES, NEW
+
+/TITLE, notched_circle
+
+/INPUT, 'inputs\Analysis_%ID%', txt
+
+Notch_rad = 1
+E = 200000
+
+! Geometry post-adimensionalization
+N_rad   = 1		 ! Notch radius
+RL      = 5*N_rad	    ! Circle diameter
+D_notch   = (R_midnotch*2)*N_rad/Notch_rad		 ! Diameter at mid-notch
+
+sL_max = sL_factor*(D_notch/2)  ! Maximum half length
+alpha   = (theta_1 - theta_2)/2		 ! Half aperture angle
+beta    = (theta_1 + theta_2)/2		 ! Rotation of mid notch wrt x axis
+
+! Mesh parameters
+ndiv1   = radial_divisions          ! Mesh refinement parameter
+ndiv2   = circumferential_divisions ! Mesh refinement parameter
+aspect  = 10                        ! Aspect ratio from outer to inner radius
+
+pi = acos(-1)
+eps = 1e-4		 ! Selection tolerance
+
+alpha_rad  = alpha/180*pi          ! angle in radiants
+beta_rad  = beta/180*pi          ! angle in radiants
+theta_1_rad = theta_1/180*pi
+theta_2_rad = theta_2/180*pi
+
+!--------------------------
+! PREPROCESSOR
+!--------------------------
+
+/PREP7
+
+! >>>>>>>>>>>> MATERIAL AND ELEMENT <<<<<<<<<<<<<<<
+! Axisymmetric harmonic elements
+ET, 1, PLANE183,,, 6  ! Axisymmetric with torsion
+
+! Elastic plastic material properties
+MP,EX,1,E
+MP,PRXY,1,ni
+MP,DENS,1,1
+
+! >>>>>>>>>>>> BUILD MODEL <<<<<<<<<<<<<<<
+
+LOCAL, 11, 1, D_notch/2 + N_rad*COS(beta_rad), N_rad*SIN(beta_rad), 0, beta        ! Local reference system
+LOCAL, 12, 0, D_notch/2, 0, 0, beta
+LOCAL, 13, 1, D_notch/2, 0, 0, beta
+
+CSYS, 11  
+K, 1, N_rad, 180, 0
+K, 2, N_rad, 180-(90-alpha), 0
+K, 3, N_rad, -180+(90-alpha), 0
+K, 4, RL + N_rad, 180
+
+CSYS, 12
+K, 5, N_rad*(1-COS((pi/2)-alpha_rad))+(1*RL)*COS(alpha_rad), N_rad*SIN((pi/2)-alpha_rad)+(1*RL)*SIN(alpha_rad)
+K, 6, N_rad*(1-COS((pi/2)-alpha_rad))+(1*RL)*COS(alpha_rad), -N_rad*SIN((pi/2)-alpha_rad)-(1*RL)*SIN(alpha_rad)
+
+! LINES
+CSYS, 0
+L, 6, 3
+L, 2, 5
+
+CSYS, 11
+L, 5, 6
+L, 3, 1
+L, 1, 2
+
+AL, 1, 4, 5, 2, 3
+
+CSYS, 13
+WPCSYS,, 13
+CYL4, 0, 0, RL
+
+CSYS, 0
+WPCSYS,, 0
+
+!BTOL, 0.1 ! Boolean tolerance
+ASBA, 2, 1
+!BTOL, 0.1E-4 ! Restore Boolean tolerance
+
+NUMMRG, ALL
+
+*GET, area4, AREA, 4, ASEL
+
+! Adjust a spurious boolean operation
+*IF, area4, NE, 0, THEN
+
+ASEL, S, AREA,,4
+LSLA, S
+KSLL, S
+
+ASEL, INVE
+LSEL, INVE
+KSEL, INVE
+
+ADELE, ALL
+LDELE, ALL
+KDELE, ALL
+
+ALLSEL
+
+*ENDIF
+
+NUMCMP, AREA
+NUMCMP, LINE
+NUMCP, KP
+
+L, 2, 5
+L, 1, 4
+L, 3, 6
+
+BTOL, 0.1 ! Boolean tolerance
+ASBL, 1, 9
+ASBL, 3, 10
+ASBL, 4, 11
+BTOL, 0.1E-4 ! Restore Boolean tolerance
+
+CSYS, 12
+min_len_1 = SQRT(sL_max**2 + (R_ratio_1*(D_notch/2))**2)
+min_len_2 = SQRT(sL_max**2 + (R_ratio_2*(D_notch/2))**2)
+K, 100, N_rad*(1-COS((pi/2)-alpha_rad))+min_len_1*COS(alpha_rad), N_rad*SIN((pi/2)-alpha_rad)+min_len_1*SIN(alpha_rad)
+K, 101, N_rad*(1-COS((pi/2)-alpha_rad))+min_len_2*COS(alpha_rad), -N_rad*SIN((pi/2)-alpha_rad)-min_len_2*SIN(alpha_rad)
+
+CSYS, 0
+K, 102, -10*sL_max, 0, 0
+K, 103, 0, 20*sL_max, 0
+K, 104, 0, -20*sL_max, 0
+
+L, 4, 102
+
+! Adjust a spurious boolean operation
+*IF, area4, NE, 0, THEN
+L, 100, 8
+L, 101, 7
+*ELSE
+L, 100, 7
+L, 101, 8
+*ENDIF
+
+L, 102, 103
+L, 102, 104
+L, 103, 100
+L, 104, 101
+
+AL, 13, 17, 15, 12, 3, 7
+AL, 14, 18, 16, 12, 4, 8
+
+RECTNG, -30*sL_max, 0, -30*sL_max, 30*sL_max
+ASBA, ALL, 7
+
+RECTNG, 0, 1.5*min_len_1 + 0.75*(D_notch/2), sL_max, 20*sL_max
+RECTNG, 0, 1.5*min_len_2 + 0.75*(D_notch/2), -sL_max, -20*sL_max
+
+*IF, theta_1, LT, 0, THEN
+
+K, 200, R_ratio_1*(D_notch/2), (R_ratio_1-1)*(D_notch/2)*TAN(theta_1_rad)
+K, 201, 1.5*min_len_1 + (D_notch/2), 1.5*min_len_1*TAN(theta_1_rad)
+K, 202, R_ratio_1*(D_notch/2), sL_max
+K, 203, 1.5*min_len_1 + (D_notch/2), sL_max
+A, 200, 201, 203, 202
+
+K, 204, R_ratio_2*(D_notch/2), (R_ratio_2-1)*(D_notch/2)*TAN(theta_1_rad)
+K, 205, 1.5*min_len_2 + D_notch/2, 1.5*min_len_2*TAN(theta_1_rad)
+K, 206, R_ratio_2*(D_notch/2), -sL_max
+K, 207, 1.5*min_len_2 + D_notch/2, -sL_max
+A, 204, 205, 207, 206
+
+*ELSEIF, theta_2, GT, 0, THEN
+
+K, 200, R_ratio_1*(D_notch/2), (R_ratio_1-1)*(D_notch/2)*TAN(theta_2_rad)
+K, 201, 1.5*min_len_1 + (D_notch/2), 1.5*min_len_1*TAN(theta_2_rad)
+K, 202, R_ratio_1*(D_notch/2), sL_max
+K, 203, 1.5*min_len_1 + (D_notch/2), sL_max
+A, 200, 201, 203, 202
+
+K, 204, R_ratio_2*(D_notch/2), (R_ratio_2-1)*(D_notch/2)*TAN(theta_2_rad)
+K, 205, 1.5*min_len_2 + (D_notch/2), 1.5*min_len_2*TAN(theta_2_rad)
+K, 206, R_ratio_2*(D_notch/2), -sL_max
+K, 207, 1.5*min_len_2 + (D_notch/2), -sL_max
+A, 204, 205, 207, 206
+
+*ELSE
+
+RECTNG, R_ratio_1*(D_notch/2), 1.5*min_len_1 + (D_notch/2), 0, sL_max
+RECTNG, R_ratio_2*(D_notch/2), 1.5*min_len_2 + (D_notch/2), -sL_max, 0
+
+*ENDIF
+
+! APLOT
+! /WAIT, 3
+
+! *ENDDO
+! /EOF
+
+BTOL, 0.1E-2 ! Boolean tolerance
+AADD, 4, 7
+AADD, 6, 10
+ASEL, U, AREA,, 4
+ASBA, ALL, 11
+ASEL, ALL
+ASBA, ALL, 4
+BTOL, 0.1E-4 ! Restore Boolean tolerance
+
+AADD, ALL
+
+! >>>>>>>>>>>> MESH <<<<<<<<<<<<<<<
+TYPE, 1 $ MAT, 1
+MSHKEY, 2 $ MSHAPE, 0
+
+MSHKEY, 0
+ESIZE, elem_size
+! SMRTSIZE, 5
+! SMRTSIZE,, 0.2, 1, 1.5, 7.5, 15, 1.4, off, on, 4
+
+! CSYS, 13
+! NROTAT, ALL
+CSYS, 0
+
+LSEL, S, LOC, Y, sL_max-eps, sL_max+eps
+LSEL, A, LOC, Y, -sL_max-eps, -sL_max+eps
+ASLL, S, 0
+AMESH, ALL
+ALLSEL, ALL
+
+NUMMRG, ALL
+
+! NSEL, S, LOC, X, -eps, eps
+! NSEL, S, LOC, Y, sL_max-eps, sL_max+eps
+! *GET, node_master_1, NODE, 0, NUM, MAX
+! NSEL, ALL
+
+! NSEL, S, LOC, X, -eps, eps
+! NSEL, S, LOC, Y, -sL_max-eps, -sL_max+eps
+! *GET, node_master_2, NODE, 0, NUM, MAX
+! NSEL, ALL
+
+! NSEL, S, LOC, Y, sL_max-eps, sL_max+eps
+! CERIG, node_master_1, ALL, ALL
+! NSEL, ALL
+
+! NSEL, S, LOC, Y, -sL_max-eps, -sL_max+eps
+! CERIG, node_master_2, ALL, ALL
+! NSEL, ALL
+
+*GET, max_node, NODE, 0, NUM, MAX
+node_master_1 = max_node + 10
+! node_master_2 = max_node + 11
+N, node_master_1, 0, 2*sL_max  !create 'master' node for MPC184's
+! N, node_master_2, 0, -2*sL_max  !create 'master' node for MPC184's
+ET, 2, 184
+KEYOPT, 2, 1, 1 !set option for beam behavior, MPC184
+TYPE, 2
+
+NSEL, S, LOC, Y, sL_max-eps, sL_max+eps
+*GET, num_nodes, NODE, 0, COUNT
+*DO, ii, 1, num_nodes,1
+    *GET, n_node, NODE, 0, NUM, MAX
+    E, node_master_1, n_node
+    NSEL, U, NODE,, n_node
+*ENDDO
+ALLSEL, ALL
+
+! NSEL, S, LOC, Y, -sL_max-eps, -sL_max+eps
+! *GET, num_nodes, NODE, 0, COUNT
+! *DO, ii, 1, num_nodes,1
+!     *GET, n_node, NODE, 0, NUM, MAX
+!     E, node_master_2, n_node
+!     NSEL, U, NODE,, n_node
+! *ENDDO
+! ALLSEL, ALL
+
+! EPLOT
+! /WAIT, 1
+
+FINISH
+
+SAVE
+
+! >>>>>>>>>>>> ELASTIC SOLUTION <<<<<<<<<<<<<<<
+
+/SOLU
+ANTYPE, STATIC
+CSYS, 0
+
+NSEL, S, NODE,, node_master_1
+D, ALL, UX, 0
+F, ALL, FY, Fy_applied
+D, ALL, UZ, 0
+D, ALL, ROTX, 0
+F, ALL, MY, My_applied
+D, ALL, ROTZ, 0
+! F, ALL, MZ, 1
+! F, ALL, MY, 1
+NSEL, ALL
+
+! NSEL, S, LOC, Y, sL_max-eps, sL_max+eps
+! F, ALL, FY, 1
+! NSEL, ALL
+
+NSEL, S, LOC, Y, -sL_max-eps, -sL_max+eps
+D, ALL, ALL, 0
+NSEL, ALL
+
+! D, ALL, ROTY, 0
+
+! NSEL, S, LOC, X, -eps, eps
+! D, ALL, UX, 0
+! NSEL, ALL
+
+! NSEL, S, NODE,, node_master_2
+! D, ALL, ALL, 0
+! NSEL, ALL
+
+SOLVE
+
+FINISH
+
+! ELASTIC BCs
+/POST1
+SET, LAST
+
+! Generate a circular path centered at the notch
+! and with a radius of 5*N_rad_1
+*AFUN, DEG
+
+*GET, X, KP, 1, LOC, X
+*GET, Y, KP, 1, LOC, Y
+RC = 5*N_rad
+
+CSYS, 13
+
+PATH, Circ, N_points, 7, 3600/(N_points-1)
+*DO, i, 1, N_points, 1
+    PPATH, i,, X + RC*COS(beta + (I-1)*(360/(N_points-1))), Y + RC*SIN(beta + (I-1)*(360/(N_points-1))), 0, 0
+*ENDDO
+
+*AFUN, RAD
+
+! RSYS, 11
+
+PDEF, UX, U, X
+PDEF, UY, U, Y
+PDEF, ROTY, ROT, Y
+
+! PLPATH, UX, UY
+! /WAIT, 3
+
+PAGET, Circ_Arr, TABLE
+
+! Subtract X and Y from the first two columns of Circ_Arr
+*GET, nRows, PARM, Circ_Arr, DIM, 1
+
+*DO, ii, 1, nRows, 1
+    Circ_Arr(ii,1) = Circ_Arr(ii,1) - X
+    Circ_Arr(ii,2) = Circ_Arr(ii,2) - Y
+*ENDDO
+
+RSYS, 0
+CSYS, 0
+
+*CFOPEN, 'freemesh_bcs/FreeMesh_BC_%ID%', txt
+*VWRITE, Circ_Arr(1,1), Circ_Arr(1,2), Circ_Arr(1,3), Circ_Arr(1,4), Circ_Arr(1,5), Circ_Arr(1,6), Circ_Arr(1,7)
+(E16.6, E16.6, E16.6, E16.6, E16.6, E16.6, E16.6)
+*CFCLOS
+
+NSEL, ALL
+
+FINISH
+
+*ENDDO
+
+

@@ -1,0 +1,352 @@
+! s14_simulate_3d_shaft.mac
+!
+! Author: T. Grossi
+! E-mail: tommaso.grossi@ing.unipi.it
+! Year: 2025
+!
+! APDL macro that simulates an elastic-plastic analysis 3D shaft with a notch
+
+FINISH
+/CLEAR, START, NEW
+
+/FORMAT, 7, E, 16, 6
+
+/GRAPHICS, FULL
+
+L_shaft = 100
+R = 30
+R_2 = 15
+
+N_rad = 0.5
+
+Fy_applied = 0
+My_applied = 600000
+Mz_applied = 600000
+
+ALPHA = 45
+BETA = 45
+
+N_points = 721
+ndiv_rot = 10
+angle_refined = 30
+
+! >>>>>>>>>>>> MATERIAL <<<<<<<<<<<<<<<
+Ey = 70000
+Nu = 0.3
+Sy = 350
+Et = 3500
+
+! >>>>>>>>>>>> MESH <<<<<<<<<<<<<<<
+sz1 = N_rad/10
+
+! >>>>>>>>>>>> PREPROCESSING <<<<<<<<<<<<<<<
+*AFUN, DEG
+
+DELTA = N_rad/COS(BETA) - N_rad
+X = R_2 + DELTA*(COS(BETA))
+Y = L_shaft/2 + DELTA*(SIN(BETA))
+RC = 5*N_rad
+! RefinedR = 6*N_rad
+
+*AFUN, RAD
+
+/PREP7
+RECTNG, 0, R, 0, L_shaft
+
+RECTNG, R_2, R, L_shaft/2 , L_shaft
+ASBA, 1, 2
+
+LFILLT, 5, 8, N_rad
+AL, 2, 6, 3
+
+AADD, ALL
+
+! CREATE CIRCLE AT THE NOTCH TIP
+K, 100, X, Y
+LSEL, NONE
+CIRCLE, 100, RC
+
+ASBL, ALL, ALL
+
+LSEL, ALL
+
+NUMMRG, ALL
+
+VROTAT, 1,3,,,,, 1, 4, angle_refined/2, 1
+VROTAT, 1,3,,,,, 1, 4, -angle_refined/2, 1
+
+VROTAT, 9,15,,,,, 1, 4, 360 - angle_refined, 4
+
+VGLUE, ALL
+
+VDELE, 1
+VDELE, 3
+
+! >>>>>>>>>>>> MATERIAL <<<<<<<<<<<<<<<
+
+MP, EX, 1, Ey
+MP, NUXY, 1, Nu
+
+! >>>>>>>>>>>> MESH <<<<<<<<<<<<<<<
+
+!Axisymmetric harmonic elements
+ET, 1, MESH200, 7
+TYPE, 1 $ MAT, 1
+MSHKEY, 0 $ MSHAPE, 0
+
+ESIZE, sz1
+! SMRTSIZE, 2
+! SMRTSIZE,, 0.2, 1, 1.08, 7.5, 15, 1.2, off, on, 10
+
+AMESH, 1
+
+ET, 2, SOLID186
+TYPE, 2 
+
+ESIZE,, ndiv_rot
+
+VROTAT, 1,,,,,, 1, 4, angle_refined/2, 1
+VROTAT, 1,,,,,, 1, 4, -angle_refined/2, 1
+
+VGLUE, ALL
+
+ALLSEL
+
+SMRTSIZE, 6
+MSHKEY, 0 $ MSHAPE, 1
+
+VSEL, U, VOLU,, 1
+VSEL, U, VOLU,, 3
+
+VADD, ALL
+
+ASEL, S, LOC, Y, -eps, eps
+AADD, ALL
+
+ASEL, S, LOC, Y, L_shaft-eps, L_shaft+eps
+AADD, ALL
+
+ASEL, ALL
+
+VMESH, ALL
+
+ALLSEL
+
+*GET, max_node, NODE, 0, NUM, MAX
+node_master_1 = max_node + 10
+! node_master_2 = max_node + 11
+N, node_master_1, 0, L_shaft*1.1  !create 'master' node for MPC184's
+! N, node_master_2, 0, -2*sL_max  !create 'master' node for MPC184's
+ET, 3, 184
+KEYOPT, 3, 1, 1 !set option for beam behavior, MPC184
+TYPE, 3
+
+NSEL, S, LOC, Y, L_shaft-eps, L_shaft+eps
+*GET, num_nodes, NODE, 0, COUNT
+*DO, ii, 1, num_nodes, 1
+    *GET, n_node, NODE, 0, NUM, MAX
+    E, node_master_1, n_node
+    NSEL, U, NODE,, n_node
+*ENDDO
+ALLSEL, ALL
+
+FINISH
+
+! >>>>>>>>>>>> ELASTIC SOLUTION <<<<<<<<<<<<<<<
+
+/SOLU
+ANTYPE, STATIC
+CSYS, 0
+
+NSEL, S, NODE,, node_master_1
+! D, ALL, UX, 0
+F, ALL, FY, Fy_applied
+D, ALL, UZ, 0
+D, ALL, ROTX, 0
+F, ALL, MY, My_applied
+F, ALL, MZ, Mz_applied
+! F, ALL, MZ, 1
+! F, ALL, MY, 1
+NSEL, ALL
+
+NSEL, S, LOC, Y, -eps, eps
+D, ALL, ALL, 0
+NSEL, ALL
+
+ESEL, U, TYPE,, 1
+
+SOLVE
+FINISH
+
+/POST1
+SET, LAST
+
+! Generate a circular path centered at the middle of line 9
+! and with a radius of 5*N_rad_1
+*AFUN, DEG
+
+CLOCAL, 11, 1, X, Y, 0, BETA
+PATH, Circ, N_points, 8, 3600/(N_points-1)
+*DO, i, 1, N_points, 1
+    PPATH, i,, X + RC*COS(beta - 180 + (I-1)*(360/(N_points-1))), Y + RC*SIN(beta - 180 + (I-1)*(360/(N_points-1))), 0, 0
+*ENDDO
+
+! RSYS, 11
+
+PDEF, UX, U, X
+PDEF, UY, U, Y
+PDEF, UZ, U, Z
+PDEF, EZZ, EPEL, Z
+
+PAGET, Circ_Arr, TABLE
+
+*CFOPEN, 'shaft_3d/Validation_Shaft_Input_3D', txt
+*VWRITE, X, Y, N_rad, ALPHA, BETA, Nu, Ey, Sy, Et 
+(F12.4, F12.4, F12.4, F12.4, F12.4, F12.4, F12.4, F12.4, F12.4)
+*CFCLOS
+
+*CFOPEN, 'shaft_3d/Validation_Shaft_Circ_3D', txt
+*VWRITE, Circ_Arr(1,1), Circ_Arr(1,2), Circ_Arr(1,3), Circ_Arr(1,4), Circ_Arr(1,5), Circ_Arr(1,6), Circ_Arr(1,7), Circ_Arr(1,8)
+(F12.6, F12.6, F12.6, F12.6, F12.6, F12.6, F12.6, F12.6)
+*CFCLOS
+
+CSYS, 11
+DSYS, 11
+NSEL, S, LOC, Z, -eps, eps
+NSEL, R, LOC, X, 0, RC+eps
+
+/OUTPUT, 'shaft_3d/Validation_Shaft_Mesh_3D', txt
+NLIST, ALL,,, COORD
+/OUTPUT, TERM
+
+RSYS, 5
+
+/OUTPUT, 'shaft_3d/Validation_Shaft_El_Send_3D', txt
+PRNSOL, SEND
+/OUTPUT, TERM
+
+/OUTPUT, 'shaft_3d/Validation_Shaft_El_Stress_3D', txt
+PRNSOL, S
+/OUTPUT, TERM
+
+RSYS, 0
+
+NSEL, ALL
+
+CSYS, 0
+DSYS, 0
+
+CSYS, 11
+
+!!! GET THE CURRENT LOAD LEVEL WRT YIELD POINT
+! Select nodes inside the circle
+NSEL, S, LOC, Z, -eps, eps
+NSEL, R, LOC, X, 0, RC+eps
+
+! Get the maximum VonMises stress
+NSORT, S, EQV, 0, 0, 1
+*GET, max_VonMises, SORT,, MAX 
+NUSORT
+
+NSEL, ALL
+
+base_el_ratio = max_VonMises/Sy
+
+Fy_yield = Fy_applied/base_el_ratio
+My_yield = My_applied/base_el_ratio
+Mz_yield = Mz_applied/base_el_ratio
+
+FINISH
+
+/PREP7
+TB,BISO,1,1        ! ACTIVATE BISO DATA TABLE
+TBDATA,1,Sy,Et
+FINISH
+
+/SOLU
+ANTYPE, STATIC
+
+AUTOTS, ON
+NROPT, FULL
+! NLGEOM, ON
+! PRED, ON,, ON
+OUTRES, ALL, ALL
+NSUBST, 1
+NCNV, 2
+CSYS, 0
+
+TIME, 1
+NSEL, S, NODE,, node_master_1
+! D, ALL, UX, 0
+F, ALL, FY, Fy_yield
+D, ALL, UZ, 0
+D, ALL, ROTX, 0
+F, ALL, MY, My_yield
+F, ALL, MZ, Mz_yield
+! F, ALL, MZ, 1
+! F, ALL, MY, 1
+NSEL, ALL
+
+NSEL, S, LOC, Y, -eps, eps
+D, ALL, ALL, 0
+NSEL, ALL
+
+ESEL, U, TYPE,, 1
+
+SOLVE
+
+TIME, 2
+NSUBST, 10
+
+NSEL, S, NODE,, node_master_1
+! D, ALL, UX, 0
+F, ALL, FY, Fy_applied
+D, ALL, UZ, 0
+D, ALL, ROTX, 0
+F, ALL, MY, My_applied
+F, ALL, MZ, Mz_applied
+! F, ALL, MZ, 1
+! F, ALL, MY, 1
+NSEL, ALL
+
+ESEL, U, TYPE,, 1
+
+SOLVE
+
+FINISH
+
+/POST1
+SET, LAST
+
+CSYS, 11
+NSEL, S, LOC, Z, -eps, eps
+NSEL, R, LOC, X, 0, RC+eps
+
+RSYS, 5
+
+/OUTPUT, 'shaft_3d/Validation_Shaft_Send_3D', txt
+PRNSOL, SEND
+/OUTPUT, TERM
+
+/OUTPUT, 'shaft_3d/Validation_Shaft_Stress_3D', txt
+PRNSOL, S
+/OUTPUT, TERM
+
+/OUTPUT, 'shaft_3d/Validation_Shaft_ePlas_3D', txt
+PRNSOL, EPPL
+/OUTPUT, TERM
+
+RSYS, 0
+
+NSEL, ALL
+
+CSYS, 0
+
+FINISH
+
+
+
+
+
+
+

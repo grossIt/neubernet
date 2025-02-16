@@ -1,0 +1,582 @@
+! s2_ansys_database_macro.mac
+!
+! Author: T. Grossi
+! E-mail: tommaso.grossi@ing.unipi.it
+! Year: 2025
+!
+! APDL macro that generates the FE database
+
+FINISH
+/CLEAR, START, NEW
+
+/FORMAT, 7, E, 16, 6
+
+! >>>>>>>>>>>> PARAMETERS <<<<<<<<<<<<<<<
+
+ID_start = 1
+ID_max = 10000  ! Number of simulations
+
+*DO, ID, ID_start, ID_max
+
+PARSAV, ALL
+/CLEAR
+PARRES, NEW
+
+/TITLE, notched_circle
+
+/INPUT, 'inputs\Analysis_%ID%', txt
+
+Notch_rad = 1
+E = 200000
+! Everything else is external input
+
+! Geometry post-adimensionalization
+N_rad   = 1		 ! Notch radius
+RL      = 5*N_rad	    ! Circle diameter
+RL_plas = 5*N_rad       ! Maximum radius of plastic zone
+D_notch = (R_midnotch*2)*N_rad/Notch_rad		 ! Diameter at mid-notch
+
+sL_max = sL_factor*(D_notch/2)       ! Maximum half length
+alpha   = (theta_1 - theta_2)/2		 ! Half aperture angle
+beta    = (theta_1 + theta_2)/2		 ! Rotation of mid notch wrt x axis
+
+! Mesh parameters
+ndiv1   = radial_divisions          ! Mesh refinement parameter
+ndiv2   = circumferential_divisions ! Mesh refinement parameter
+aspect  = 10  ! Aspect ratio from outer to inner radius
+
+pi = acos(-1)
+eps = 1e-4		 ! Selection tolerance
+ep_min = 1e-6   ! Accumulated plastic strain threshold for plastic zone selection
+
+alpha_rad  = alpha/180*pi          ! angle in radiants
+beta_rad  = beta/180*pi          ! angle in radiants
+theta_1_rad = theta_1/180*pi
+theta_2_rad = theta_2/180*pi
+
+!--------------------------
+! PREPROCESSOR
+!--------------------------
+
+/PREP7
+
+! >>>>>>>>>>>> MATERIAL AND ELEMENT <<<<<<<<<<<<<<<
+! Axisymmetric harmonic elements
+ET, 1, PLANE183,,, 6  ! Axisymmetric with torsion
+
+! Elastic plastic material properties
+MP,EX,1,E
+MP,PRXY,1,ni
+MP,DENS,1,1
+
+! >>>>>>>>>>>> BUILD MODEL <<<<<<<<<<<<<<<
+
+LOCAL, 11, 1, D_notch/2 + N_rad*COS(beta_rad), N_rad*SIN(beta_rad), 0, beta        ! Local reference system
+LOCAL, 12, 0, D_notch/2, 0, 0, beta
+LOCAL, 13, 1, D_notch/2, 0, 0, beta
+
+CSYS, 11  
+K, 1, N_rad, 180, 0
+K, 2, N_rad, 180-(90-alpha), 0
+K, 3, N_rad, -180+(90-alpha), 0
+K, 4, RL + N_rad, 180
+
+CSYS, 12
+K, 5, N_rad*(1-COS((pi/2)-alpha_rad))+(1*RL)*COS(alpha_rad), N_rad*SIN((pi/2)-alpha_rad)+(1*RL)*SIN(alpha_rad)
+K, 6, N_rad*(1-COS((pi/2)-alpha_rad))+(1*RL)*COS(alpha_rad), -N_rad*SIN((pi/2)-alpha_rad)-(1*RL)*SIN(alpha_rad)
+
+! LINES
+CSYS, 0
+L, 6, 3
+L, 2, 5
+
+CSYS, 11
+L, 5, 6
+L, 3, 1
+L, 1, 2
+
+AL, 1, 4, 5, 2, 3
+
+CSYS, 13
+WPCSYS,, 13
+CYL4, 0, 0, RL
+
+CSYS, 0
+WPCSYS,, 0
+
+!BTOL, 0.1 ! Boolean tolerance
+ASBA, 2, 1
+!BTOL, 0.1E-4 ! Restore Boolean tolerance
+
+NUMMRG, ALL
+
+*GET, area4, AREA, 4, ASEL
+
+! Adjust a spurious boolean operation
+*IF, area4, NE, 0, THEN
+
+ASEL, S, AREA,,4
+LSLA, S
+KSLL, S
+
+ASEL, INVE
+LSEL, INVE
+KSEL, INVE
+
+ADELE, ALL
+LDELE, ALL
+KDELE, ALL
+
+ALLSEL
+
+*ENDIF
+
+NUMCMP, AREA
+NUMCMP, LINE
+NUMCMP, KP
+
+CSYS, 13
+KMODIF, 5, RL, 90 + alpha/2
+KMODIF, 6, RL, -90 - alpha/2
+CSYS, 0
+
+L, 1, 4
+
+BTOL, 0.1 ! Boolean tolerance
+ASBL, 1, 9
+BTOL, 0.1E-4 ! Restore Boolean tolerance
+
+CSYS, 12
+min_len_1 = SQRT(sL_max**2 + (R_ratio_1*(D_notch/2))**2)
+min_len_2 = SQRT(sL_max**2 + (R_ratio_2*(D_notch/2))**2)
+K, 100, N_rad*(1-COS((pi/2)-alpha_rad))+min_len_1*COS(alpha_rad), N_rad*SIN((pi/2)-alpha_rad)+min_len_1*SIN(alpha_rad)
+K, 101, N_rad*(1-COS((pi/2)-alpha_rad))+min_len_2*COS(alpha_rad), -N_rad*SIN((pi/2)-alpha_rad)-min_len_2*SIN(alpha_rad)
+
+CSYS, 0
+K, 102, -10*sL_max, 0, 0
+K, 103, 0, 20*sL_max, 0
+K, 104, 0, -20*sL_max, 0
+
+L, 4, 102
+
+! Adjust a spurious boolean operation
+*IF, area4, NE, 0, THEN
+L, 100, 8
+L, 101, 7
+*ELSE
+L, 100, 7
+L, 101, 8
+*ENDIF
+
+L, 102, 103
+L, 102, 104
+L, 103, 100
+L, 104, 101
+
+AL, 11, 15, 13, 10, 3, 7
+AL, 12, 16, 14, 10, 4, 8
+
+RECTNG, -30*sL_max, 0, -30*sL_max, 30*sL_max
+ASBA, ALL, 5
+
+RECTNG, 0, 1.5*min_len_1 + 0.75*(D_notch/2), sL_max, 20*sL_max
+RECTNG, 0, 1.5*min_len_2 + 0.75*(D_notch/2), -sL_max, -20*sL_max
+
+*IF, theta_1, LT, 0, THEN
+
+K, 200, R_ratio_1*(D_notch/2), (R_ratio_1-1)*(D_notch/2)*TAN(theta_1_rad)
+K, 201, 1.5*min_len_1 + (D_notch/2), 1.5*min_len_1*TAN(theta_1_rad)
+K, 202, R_ratio_1*(D_notch/2), sL_max
+K, 203, 1.5*min_len_1 + (D_notch/2), sL_max
+A, 200, 201, 203, 202
+
+K, 204, R_ratio_2*(D_notch/2), (R_ratio_2-1)*(D_notch/2)*TAN(theta_1_rad)
+K, 205, 1.5*min_len_2 + D_notch/2, 1.5*min_len_2*TAN(theta_1_rad)
+K, 206, R_ratio_2*(D_notch/2), -sL_max
+K, 207, 1.5*min_len_2 + D_notch/2, -sL_max
+A, 204, 205, 207, 206
+
+*ELSEIF, theta_2, GT, 0, THEN
+
+K, 200, R_ratio_1*(D_notch/2), (R_ratio_1-1)*(D_notch/2)*TAN(theta_2_rad)
+K, 201, 1.5*min_len_1 + (D_notch/2), 1.5*min_len_1*TAN(theta_2_rad)
+K, 202, R_ratio_1*(D_notch/2), sL_max
+K, 203, 1.5*min_len_1 + (D_notch/2), sL_max
+A, 200, 201, 203, 202
+
+K, 204, R_ratio_2*(D_notch/2), (R_ratio_2-1)*(D_notch/2)*TAN(theta_2_rad)
+K, 205, 1.5*min_len_2 + (D_notch/2), 1.5*min_len_2*TAN(theta_2_rad)
+K, 206, R_ratio_2*(D_notch/2), -sL_max
+K, 207, 1.5*min_len_2 + (D_notch/2), -sL_max
+A, 204, 205, 207, 206
+
+*ELSE
+
+RECTNG, R_ratio_1*(D_notch/2), 1.5*min_len_1 + (D_notch/2), 0, sL_max
+RECTNG, R_ratio_2*(D_notch/2), 1.5*min_len_2 + (D_notch/2), -sL_max, 0
+
+*ENDIF
+
+! APLOT
+! /WAIT, 3
+
+BTOL, 0.1E-2 ! Boolean tolerance
+AADD, 1, 5
+AADD, 4, 8
+ASEL, U, AREA,, 1
+ASBA, ALL, 9
+ASEL, ALL
+ASBA, ALL, 1
+BTOL, 0.1E-4 ! Restore Boolean tolerance
+
+! >>>>>>>>>>>> MESH <<<<<<<<<<<<<<<
+LESIZE, 5,,, ndiv1, aspect
+LESIZE, 9,,, ndiv1 + ndiv2, aspect
+LESIZE, 6,,, ndiv1, aspect
+
+LESIZE, 1,,, ndiv2
+LESIZE, 2,,, ndiv2
+LESIZE, 3,,, ndiv2
+LESIZE, 4,,, ndiv2
+
+LESIZE, 7,,, ndiv1
+LESIZE, 8,,, ndiv1
+
+LCCAT, 2, 5
+LCCAT, 1, 6
+LCCAT, 3, 7
+LCCAT, 4, 8
+
+LESIZE, 20, 2,,, aspect
+LESIZE, 21, 2,,, aspect
+LESIZE, 11, 2,,, aspect
+
+TYPE, 1 $ MAT, 1
+MSHKEY, 2 $ MSHAPE, 0
+
+AMESH, 2
+AMESH, 3
+
+MSHKEY, 0
+! SMRTSIZE, 1
+SMRTSIZE,, 0.2, 1, 1.5, 7.5, 15, 1.4, off, on, 4
+
+! CSYS, 13
+! NROTAT, ALL
+CSYS, 0
+
+LSEL, S, LOC, Y, sL_max-eps, sL_max+eps
+LSEL, A, LOC, Y, -sL_max-eps, -sL_max+eps
+ASLL, S, 0
+AMESH, ALL
+ALLSEL, ALL
+
+NUMMRG, ALL
+
+! NSEL, S, LOC, X, -eps, eps
+! NSEL, S, LOC, Y, sL_max-eps, sL_max+eps
+! *GET, node_master_1, NODE, 0, NUM, MAX
+! NSEL, ALL
+
+! NSEL, S, LOC, X, -eps, eps
+! NSEL, S, LOC, Y, -sL_max-eps, -sL_max+eps
+! *GET, node_master_2, NODE, 0, NUM, MAX
+! NSEL, ALL
+
+! NSEL, S, LOC, Y, sL_max-eps, sL_max+eps
+! CERIG, node_master_1, ALL, ALL
+! NSEL, ALL
+
+! NSEL, S, LOC, Y, -sL_max-eps, -sL_max+eps
+! CERIG, node_master_2, ALL, ALL
+! NSEL, ALL
+
+*GET, max_node, NODE, 0, NUM, MAX
+node_master_1 = max_node + 10
+! node_master_2 = max_node + 11
+N, node_master_1, 0, 2*sL_max  !create 'master' node for MPC184's
+! N, node_master_2, 0, -2*sL_max  !create 'master' node for MPC184's
+ET, 2, 184
+KEYOPT, 2, 1, 1 !set option for beam behavior, MPC184
+TYPE, 2
+
+NSEL, S, LOC, Y, sL_max-eps, sL_max+eps
+*GET, num_nodes, NODE, 0, COUNT
+*DO, ii, 1, num_nodes,1
+    *GET, n_node, NODE, 0, NUM, MAX
+    E, node_master_1, n_node
+    NSEL, U, NODE,, n_node
+*ENDDO
+ALLSEL, ALL
+
+! NSEL, S, LOC, Y, -sL_max-eps, -sL_max+eps
+! *GET, num_nodes, NODE, 0, COUNT
+! *DO, ii, 1, num_nodes,1
+!     *GET, n_node, NODE, 0, NUM, MAX
+!     E, node_master_2, n_node
+!     NSEL, U, NODE,, n_node
+! *ENDDO
+! ALLSEL, ALL
+
+CSYS, 13
+DSYS, 13
+NSEL, U, NODE,, node_master_1
+NSEL, R, LOC, X, -eps, RL+eps
+/OUTPUT, 'meshes\Mesh_%ID%', txt
+NLIST, ALL,,, COORD
+/OUTPUT, TERM
+DSYS, 0
+CSYS, 0
+NSEL, ALL
+
+! EPLOT
+! /WAIT, 3
+
+FINISH
+
+! >>>>>>>>>>>> ELASTIC SOLUTION <<<<<<<<<<<<<<<
+
+/SOLU
+ANTYPE, STATIC
+CSYS, 0
+
+NSEL, S, NODE,, node_master_1
+D, ALL, UX, 0
+F, ALL, FY, Fy_applied
+D, ALL, UZ, 0
+D, ALL, ROTX, 0
+F, ALL, MY, My_applied
+D, ALL, ROTZ, 0
+! F, ALL, MZ, 1
+! F, ALL, MY, 1
+NSEL, ALL
+
+! NSEL, S, LOC, Y, sL_max-eps, sL_max+eps
+! F, ALL, FY, 1
+! NSEL, ALL
+
+NSEL, S, LOC, Y, -sL_max-eps, -sL_max+eps
+D, ALL, ALL, 0
+NSEL, ALL
+
+! D, ALL, ROTY, 0
+
+! NSEL, S, LOC, X, -eps, eps
+! D, ALL, UX, 0
+! NSEL, ALL
+
+! NSEL, S, NODE,, node_master_2
+! D, ALL, ALL, 0
+! NSEL, ALL
+
+SOLVE
+
+FINISH
+
+! ELASTIC BCs
+/POST1
+SET, LAST
+
+CSYS, 13
+
+!!! GET THE CURRENT LOAD LEVEL WRT YIELD POINT
+! Select nodes inside the circle
+NSEL, S, LOC, X, -eps, RL+eps
+ESLN, S, 1
+
+! Get the maximum VonMises stress
+NSORT, S, EQV, 0, 0, 1
+*GET, max_VonMises, SORT,, MAX 
+NUSORT
+
+NSEL, ALL
+ESEL, ALL
+
+base_el_ratio = max_VonMises/Sy
+
+Fy_yield = Fy_applied/base_el_ratio
+My_yield = My_applied/base_el_ratio
+
+/OUTPUT, 'bcs\El_Ratio_%ID%', txt
+*VWRITE, Fy_yield, My_yield, base_el_ratio
+(F16.4, F16.4, F16.4)
+/OUTPUT, TERM
+
+CSYS, 0
+
+FINISH
+
+/PREP7
+TB,BISO,1,1,         ! ACTIVATE BISO DATA TABLE
+TBDATA,1,Sy,Et
+FINISH
+
+/SOLU
+ANTYPE, STATIC, NEW
+RESCONTROL, DEFINE, LAST
+
+! ANTYPE, MODAL
+! MODOPT, LANB, 10
+
+AUTOTS, ON
+NROPT, FULL
+! CNVTOL, F,, 0.001, 2, -1
+! CNVTOL, U,, 0.01, 0, -1
+! NLGEOM, ON
+! PRED, ON,, ON
+NSUBST, 10
+NCNV, 2
+CSYS, 0
+
+par = 1
+i = 0
+*DOWHILE, par
+    *IF, i, GT, 0, THEN
+        PARSAV
+        ANTYPE, STATIC, RESTART
+        PARRES
+    *ENDIF
+
+    TIME, i+1
+
+    NSEL, S, NODE,, node_master_1
+    D, ALL, UX, 0
+    F, ALL, FY, Fy_yield + (i/4)*Fy_yield
+    D, ALL, UZ, 0
+    D, ALL, ROTX, 0
+    F, ALL, MY, My_yield + (i/4)*My_yield
+    D, ALL, ROTZ, 0
+    ! F, ALL, MZ, 1
+    ! F, ALL, MY, 1
+    NSEL, ALL
+
+    ! NSEL, S, LOC, Y, sL_max-eps, sL_max+eps
+    ! F, ALL, FY, 1
+    ! NSEL, ALL
+
+    NSEL, S, LOC, Y, -sL_max-eps, -sL_max+eps
+    D, ALL, ALL, 0
+    NSEL, ALL
+
+    ! D, ALL, ROTY, 0
+
+    ! NSEL, S, LOC, X, -eps, eps
+    ! D, ALL, UX, 0
+    ! NSEL, ALL
+
+    ! NSEL, S, NODE,, node_master_2
+    ! D, ALL, ALL, 0
+    ! NSEL, ALL
+
+    SOLVE
+
+    *GET, Converged, ACTIVE, 0, SOLU, CNVG
+
+    FINISH
+
+    /POST1
+    SET, LAST
+
+    CSYS, 13
+
+    *IF, Converged, EQ, 1, THEN
+
+        *IF, i, EQ, 0, THEN
+            !!! EXTRACT BCs
+            NSEL, S, LOC, X, RL-eps, RL+eps
+
+            /OUTPUT, 'BCs\BC_%ID%', txt
+            PRNSOL, U, X
+            PRNSOL, U, Y
+            PRNSOL, ROT, Y
+            /OUTPUT, TERM
+
+            NSEL, ALL
+
+            !
+            NSEL, S, LOC, X, -eps, RL+eps
+            ESLN, S, 1
+
+            ! PLNSOL, S, EQV
+            !  /AUTO
+            ! *ASK, 'Dummy', 'Elastic SEQV: Press OK to continue', 0
+
+            RSYS, 12
+
+            /OUTPUT, 'results\El_Send_%ID%', txt
+            PRNSOL, SEND
+            /OUTPUT, TERM
+
+            /OUTPUT, 'results\El_Stress_%ID%', txt
+            PRNSOL, S
+            /OUTPUT, TERM
+
+            RSYS, 0
+
+            NSEL, ALL
+            ESEL, ALL
+            !
+        *ENDIF
+
+        ! ! Plot plastic strain energy density
+        ! NSEL, S, LOC, X, -eps, RL+eps
+        ! ESLN, S, 1
+        ! PLNSOL, SEND, PLASTIC
+        ! /AUTO
+        ! *ASK, 'Dummy', 'Plastic SENE: Press OK to continue', 0
+        ! ESEL, ALL
+        ! NSEL, ALL
+
+        NSEL, S, NL, EPEQ, ep_min
+        NSEL, R, LOC, X, -eps, RL+N_rad+eps  ! We select a circle that is slightly bigger than RL, to check for the plastic zone
+        *GET, max_R, NODE, 0, MXLOC, X
+
+        *IF, max_R, GT, RL_plas, THEN
+
+            *EXIT
+
+        *ELSE
+            NSEL, S, LOC, X, -eps, RL+eps
+
+            RSYS, 12
+
+            /OUTPUT, 'results\Send_%ID%_%i%', txt
+            PRNSOL, SEND
+            /OUTPUT, TERM
+
+            /OUTPUT, 'results\Stress_%ID%_%i%', txt
+            PRNSOL, S
+            /OUTPUT, TERM
+
+            /OUTPUT, 'results\ePlas_%ID%_%i%', txt
+            PRNSOL, EPPL
+            /OUTPUT, TERM
+
+            RSYS, 0
+
+            NSEL, ALL
+        *ENDIF
+
+        ! /WAIT, 1
+
+    *ELSE
+
+        /OUTPUT, 'results\NC_%ID%_%i%', txt
+        /STATUS, SOLU
+        /OUTPUT, TERM
+
+        *EXIT
+
+    *ENDIF
+
+    CSYS, 0
+
+    FINISH
+
+    /SOLU
+    i = i+1
+
+    *ENDDO
+
+*ENDDO
+
