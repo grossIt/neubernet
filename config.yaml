@@ -1,0 +1,223 @@
+# Database parameters
+N: 10000  # number of FEM analyses in the database
+E: 200000  # simulated Young's modulus of the material in the database
+R_notch: 1  # notch radius in the database
+RL: 5  # ratio of radius of the circular domain to the notch radius
+load_step_size: 0.25  # load step size (as a fraction of the yielding BC) in the database
+
+# Geometric bounds
+theta_lim: 95  # max angle between a notch side and the horizontal axis
+gamma_lim: -5  # min angle between a notch side and the horizontal axis
+
+# Mesh parameters
+mean_radial_divisions: 16  # mean number of radial divisions in the circular sector mesh
+mean_circumferential_divisions: 16  # mean number of angular divisions in the circular sector mesh
+radial_variability: 2  # half-variability (+/-, always even) of the radial divisions in the mesh
+circumferential_variability: 2  # half-variability (+/-, always even) of the angular divisions in the mesh
+
+# Lower bounds for the random variables
+lower_bounds:
+  R: 10  # minimum ratio between distance from symmetry axis to the notch tip to the notch radius
+  alpha: 0  # semi-angle of notch aperture
+  sL_factor: 1  # minimum half-length of the surrounding domain as a factor of the notch tip distance from axis
+  Fy_My_interp: 0  # minimum ratio of the applied force to the applied moment
+  Sy: 200  # minimum yield strength of the material
+  Et: 200  # minimum plastic modulus of the material
+  ni: 0.05  # minimum Poisson's ratio of the material
+
+# Upper bounds for the random variables
+upper_bounds:
+  R: 100  # maximum ratio between distance from symmetry axis to the notch tip to the notch radius
+  alpha: 75  # maximum semi-angle of notch aperture
+  R_ratio_1: 3  # maximum ratio of the external radius of the upper domain to the distance from the symmetry axis to the notch tip
+  R_ratio_2: 3  # maximum ratio of the external radius of the lower domain to the distance from the symmetry axis to the notch tip
+  sL_factor: 5  # maximum half-length of the surrounding domain as a factor of the notch tip distance from axis
+  Fy_My_interp: 1  # maximum ratio of the applied force to the applied moment
+  Sy: 2000  # maximum yield strength of the material
+  Et: 20000  # maximum plastic modulus of the material
+  ni: 0.45  # maximum Poisson's ratio of the material
+
+# NeuberNet hyperparameters
+branch_input_dim: 108  # Dimension of the input to the BranchNet
+nomad_secondary_input_dim: 8  # Dimension of the secondary input to the decoder network
+branch_hidden_dim: 256  # Hidden dimension of the BranchNet
+nomad_hidden_dim: 512  # Hidden dimension of the decoder network
+branch_hidden_layers: 2  # Number of hidden layers in the BranchNet
+nomad_hidden_layers: 5  # Number of hidden layers in the decoder network
+n_terms: 64  # Number of expansion terms in the Nonlinear Manifold Decoder
+activation_type: 'ReLU'  # Activation function for the hidden layers
+optimizer_algo: 'Adam'  # Optimizer algorithm
+loss_fun: 'MSE'  # Loss function
+
+# NeuberNet Training parameters
+num_epochs: 1000  # Number of epochs for training
+batch_size: 4096  # Batch size for the optimizer
+learning_rate: 1e-4  # Learning rate for the optimizer
+weight_decay: 1e-4  # Weight decay for the optimizer
+cosine_annealing: True  # If True, uses cosine annealing for the learning rate
+decimation_factor: 1  # Decimation factor (>1) for the analyses in the database
+leave_out_fraction: 0  # Randomly leaves out a fraction (between 0 and 1) of points in the database
+split_fraction: 0.8  # Fraction of the database used for training
+whole_dataset_on_GPU: True  # If True, the whole dataset is loaded on the GPU
+half_precision_database: False  # If True, the database is stored in half precision
+min_epoch_save: 1  # Minimum number of epochs before saving the model
+checkpoint_freq: 5  # Frequency of checkpoints for model saving
+random_seed: 42  # Random seed for reproducibility
+num_workers: 8  # Number of workers for the DataLoader (if whole_dataset_on_GPU is False)
+analysis_data_dict:
+  0: 'UX -180'  # Displacement in the x direction at theta = -180 degrees
+  1: 'UX -170'  # Displacement in the x direction at theta = -170 degrees
+  2: 'UX -160'  # Displacement in the x direction at theta = -160 degrees
+  3: 'UX -150'  # Displacement in the x direction at theta = -150 degrees
+  4: 'UX -140'  # Displacement in the x direction at theta = -140 degrees
+  5: 'UX -130'  # Displacement in the x direction at theta = -130 degrees
+  6: 'UX -120'  # Displacement in the x direction at theta = -120 degrees
+  7: 'UX -110'  # Displacement in the x direction at theta = -110 degrees
+  8: 'UX -100'  # Displacement in the x direction at theta = -100 degrees
+  9: 'UX -90'  # Displacement in the x direction at theta = -90 degrees
+  10: 'UX -80'  # Displacement in the x direction at theta = -80 degrees
+  11: 'UX -70'  # Displacement in the x direction at theta = -70 degrees
+  12: 'UX -60'  # Displacement in the x direction at theta = -60 degrees
+  13: 'UX -50'  # Displacement in the x direction at theta = -50 degrees
+  14: 'UX -40'  # Displacement in the x direction at theta = -40 degrees
+  15: 'UX -30'  # Displacement in the x direction at theta = -30 degrees
+  16: 'UX -20'  # Displacement in the x direction at theta = -20 degrees
+  17: 'UX -10'  # Displacement in the x direction at theta = -10 degrees
+  18: 'UX 0'  # Displacement in the x direction at theta = 0 degrees
+  19: 'UX 10'  # Displacement in the x direction at theta = 10 degrees
+  20: 'UX 20'  # Displacement in the x direction at theta = 20 degrees
+  21: 'UX 30'  # Displacement in the x direction at theta = 30 degrees
+  22: 'UX 40'  # Displacement in the x direction at theta = 40 degrees
+  23: 'UX 50'  # Displacement in the x direction at theta = 50 degrees
+  24: 'UX 60'  # Displacement in the x direction at theta = 60 degrees
+  25: 'UX 70'  # Displacement in the x direction at theta = 70 degrees
+  26: 'UX 80'  # Displacement in the x direction at theta = 80 degrees
+  27: 'UX 90'  # Displacement in the x direction at theta = 90 degrees
+  28: 'UX 100'  # Displacement in the x direction at theta = 100 degrees
+  29: 'UX 110'  # Displacement in the x direction at theta = 110 degrees
+  30: 'UX 120'  # Displacement in the x direction at theta = 120 degrees
+  31: 'UX 130'  # Displacement in the x direction at theta = 130 degrees
+  32: 'UX 140'  # Displacement in the x direction at theta = 140 degrees
+  33: 'UX 150'  # Displacement in the x direction at theta = 150 degrees
+  34: 'UX 160'  # Displacement in the x direction at theta = 160 degrees
+  35: 'UX 170'  # Displacement in the x direction at theta = 170 degrees
+  36: 'UY -180'  # Displacement in the y direction at theta = -180 degrees
+  37: 'UY -170'  # Displacement in the y direction at theta = -170 degrees
+  38: 'UY -160'  # Displacement in the y direction at theta = -160 degrees
+  39: 'UY -150'  # Displacement in the y direction at theta = -150 degrees
+  40: 'UY -140'  # Displacement in the y direction at theta = -140 degrees
+  41: 'UY -130'  # Displacement in the y direction at theta = -130 degrees
+  42: 'UY -120'  # Displacement in the y direction at theta = -120 degrees
+  43: 'UY -110'  # Displacement in the y direction at theta = -110 degrees
+  44: 'UY -100'  # Displacement in the y direction at theta = -100 degrees
+  45: 'UY -90'  # Displacement in the y direction at theta = -90 degrees
+  46: 'UY -80'  # Displacement in the y direction at theta = -80 degrees
+  47: 'UY -70'  # Displacement in the y direction at theta = -70 degrees
+  48: 'UY -60'  # Displacement in the y direction at theta = -60 degrees
+  49: 'UY -50'  # Displacement in the y direction at theta = -50 degrees
+  50: 'UY -40'  # Displacement in the y direction at theta = -40 degrees
+  51: 'UY -30'  # Displacement in the y direction at theta = -30 degrees
+  52: 'UY -20'  # Displacement in the y direction at theta = -20 degrees
+  53: 'UY -10'  # Displacement in the y direction at theta = -10 degrees
+  54: 'UY 0'  # Displacement in the y direction at theta = 0 degrees
+  55: 'UY 10'  # Displacement in the y direction at theta = 10 degrees
+  56: 'UY 20'  # Displacement in the y direction at theta = 20 degrees
+  57: 'UY 30'  # Displacement in the y direction at theta = 30 degrees
+  58: 'UY 40'  # Displacement in the y direction at theta = 40 degrees
+  59: 'UY 50'  # Displacement in the y direction at theta = 50 degrees
+  60: 'UY 60'  # Displacement in the y direction at theta = 60 degrees
+  61: 'UY 70'  # Displacement in the y direction at theta = 70 degrees
+  62: 'UY 80'  # Displacement in the y direction at theta = 80 degrees
+  63: 'UY 90'  # Displacement in the y direction at theta = 90 degrees
+  64: 'UY 100'  # Displacement in the y direction at theta = 100 degrees
+  65: 'UY 110'  # Displacement in the y direction at theta = 110 degrees
+  66: 'UY 120'  # Displacement in the y direction at theta = 120 degrees
+  67: 'UY 130'  # Displacement in the y direction at theta = 130 degrees
+  68: 'UY 140'  # Displacement in the y direction at theta = 140 degrees
+  69: 'UY 150'  # Displacement in the y direction at theta = 150 degrees
+  70: 'UY 160'  # Displacement in the y direction at theta = 160 degrees
+  71: 'UY 170'  # Displacement in the y direction at theta = 170 degrees
+  72: 'ROTY -180'  # Rotation about the y axis at theta = -180 degrees
+  73: 'ROTY -170'  # Rotation about the y axis at theta = -170 degrees
+  74: 'ROTY -160'  # Rotation about the y axis at theta = -160 degrees
+  75: 'ROTY -150'  # Rotation about the y axis at theta = -150 degrees
+  76: 'ROTY -140'  # Rotation about the y axis at theta = -140 degrees
+  77: 'ROTY -130'  # Rotation about the y axis at theta = -130 degrees
+  78: 'ROTY -120'  # Rotation about the y axis at theta = -120 degrees
+  79: 'ROTY -110'  # Rotation about the y axis at theta = -110 degrees
+  80: 'ROTY -100'  # Rotation about the y axis at theta = -100 degrees
+  81: 'ROTY -90'  # Rotation about the y axis at theta = -90 degrees
+  82: 'ROTY -80'  # Rotation about the y axis at theta = -80 degrees
+  83: 'ROTY -70'  # Rotation about the y axis at theta = -70 degrees
+  84: 'ROTY -60'  # Rotation about the y axis at theta = -60 degrees
+  85: 'ROTY -50'  # Rotation about the y axis at theta = -50 degrees
+  86: 'ROTY -40'  # Rotation about the y axis at theta = -40 degrees
+  87: 'ROTY -30'  # Rotation about the y axis at theta = -30 degrees
+  88: 'ROTY -20'  # Rotation about the y axis at theta = -20 degrees
+  89: 'ROTY -10'  # Rotation about the y axis at theta = -10 degrees
+  90: 'ROTY 0'  # Rotation about the y axis at theta = 0 degrees
+  91: 'ROTY 10'  # Rotation about the y axis at theta = 10 degrees
+  92: 'ROTY 20'  # Rotation about the y axis at theta = 20 degrees
+  93: 'ROTY 30'  # Rotation about the y axis at theta = 30 degrees
+  94: 'ROTY 40'  # Rotation about the y axis at theta = 40 degrees
+  95: 'ROTY 50'  # Rotation about the y axis at theta = 50 degrees
+  96: 'ROTY 60'  # Rotation about the y axis at theta = 60 degrees
+  97: 'ROTY 70'  # Rotation about the y axis at theta = 70 degrees
+  98: 'ROTY 80'  # Rotation about the y axis at theta = 80 degrees
+  99: 'ROTY 90'  # Rotation about the y axis at theta = 90 degrees
+  100: 'ROTY 100'  # Rotation about the y axis at theta = 100 degrees
+  101: 'ROTY 110'  # Rotation about the y axis at theta = 110 degrees
+  102: 'ROTY 120'  # Rotation about the y axis at theta = 120 degrees
+  103: 'ROTY 130'  # Rotation about the y axis at theta = 130 degrees
+  104: 'ROTY 140'  # Rotation about the y axis at theta = 140 degrees
+  105: 'ROTY 150'  # Rotation about the y axis at theta = 150 degrees
+  106: 'ROTY 160'  # Rotation about the y axis at theta = 160 degrees
+  107: 'ROTY 170'  # Rotation about the y axis at theta = 170 degrees
+  108: '$R / R_{\mathrm{notch}}$'  # Ratio between distance from symmetry axis to the notch tip to the notch radius
+  109: '$\alpha$'  # Semi-angle of notch aperture
+  110: '$\beta$'  # Angle between the notch symmetry axis and the horizontal axis
+  111: '$\sigma_Y / E$'  # Yield stress over Young's modulus
+  112: '$E_t / E$'  # Plastic modulus over Young's modulus
+  113: '$\nu$'  # Poisson's ratio
+input_var_dict:
+  0: 'analysis index'  # FEM Analysis index
+  1: 'analysis load step'  # FEM Analysis load step
+  2: '$x / R_{\mathrm{n}}$'  # X coordinate of the point normalized by the notch radius
+  3: '$y / R_{\mathrm{n}}$'  # Y coordinate of the point normalized by the notch radius
+target_var_dict:
+  0: '$\omega_{\mathrm{el}}/\sigma_\mathrm{y}$'  # Elastic strain energy variation
+  1: '$\omega_{\mathrm{pl}}/\sigma_\mathrm{y}$'  # Plastic strain energy
+  2: '$\sigma_{xx}/\sigma_\mathrm{y}$'  # Stress xx variation
+  3: '$\sigma_{yy}/\sigma_\mathrm{y}$'  # Stress yy variation
+  4: '$\sigma_{zz}/\sigma_\mathrm{y}$'  # Stress zz variation
+  5: '$\sigma_{xy}/\sigma_\mathrm{y}$'  # Stress xy variation
+  6: '$\sigma_{yz}/\sigma_\mathrm{y}$'  # Stress yz variation
+  7: '$\sigma_{xz}/\sigma_\mathrm{y}$'  # Stress xz variation
+  8: '$\varepsilon_{\mathrm{pl},xx}$'  # Plastic strain xx
+  9: '$\varepsilon_{\mathrm{pl},yy}$'  # Plastic strain yy
+  10: '$\varepsilon_{\mathrm{pl},zz}$'  # Plastic strain zz
+  11: '$\varepsilon_{\mathrm{pl},xy}$'  # Plastic strain xy
+  12: '$\varepsilon_{\mathrm{pl},yz}$'  # Plastic strain yz
+  13: '$\varepsilon_{\mathrm{pl},xz}$'  # Plastic strain xz
+
+# YieldNet-specific parameters
+yield_nomad_hidden_dim: 128   # Hidden dimension of the decoder network
+yield_num_epochs: 1000  # Number of epochs for training
+yield_batch_size: 128  # Batch size for the optimizer
+yield_learning_rate: 1e-4  # Learning rate for the optimizer
+yield_weight_decay: 1e-4  # Weight decay for the optimizer
+yield_cosine_annealing: True  # If True, uses cosine annealing for the learning rate
+yield_tol: 2.5e-2  # Relative tolerance (to \sigma_Y) in detecting that the equivalent stress is above the elastic limit
+yield_small_pl_tol: 0.5  # Relative tolerance (to \sigma_Y) in detecting that small-scale plasticity has been violated
+
+# SignNet-specific parameters
+sign_nomad_hidden_dim: 128  # Hidden dimension of the decoder network
+sign_num_epochs: 1000  # Number of epochs for training
+sign_batch_size: 128  # Batch size for the optimizer
+sign_learning_rate: 1e-4  # Learning rate for the optimizer
+sign_weight_decay: 1e-4  # Weight decay for the optimizer
+sign_cosine_annealing: True  # If True, uses cosine annealing for the learning rate
+sign_loss_fun: 'BCEWithLogits'
+
+# Plot parameters
+alpha_shape: 2 # Alpha shape parameter for plot contours
