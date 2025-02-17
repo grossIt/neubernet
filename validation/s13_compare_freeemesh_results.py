@@ -1,3 +1,13 @@
+"""
+s13_compare_freeemesh_results.py
+
+Author: T. Grossi
+E-mail: tommaso.grossi@ing.unipi.it
+Year: 2025
+
+Script that compares the analysis metrics for increasing element size the freemesh analyses
+"""
+
 import os
 import pandas as pd
 from matplotlib import pyplot as plt
