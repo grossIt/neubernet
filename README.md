@@ -42,6 +42,9 @@ by T. Grossi, M. Beghini, and M. Benedetti.
 
 Please note that an installation of ANSYS Mechanical is required to execute the APDL macros related to the FE analyses.
 
+The FE dataset, along with all intermediate and final results, is available in this [Zenodo](https://doi.org/10.5281/zenodo.14880154) folder.
+Simply unzip the dataset into the repository folder.
+
 ---
 
 ## Usage
