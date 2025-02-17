@@ -86,7 +86,7 @@ max_error_on_max_values.index = max_error_on_max_values.index.astype(str)
 #     df /= df.iloc[0]  # Normalize over first values
 
 # Plot all variables in a single overlaid figure
-fig, ax = plt.subplots(1, 3, figsize=(4.5, 1.5))
+fig, ax = plt.subplots(1, 3, figsize=(4.5, 2))
 plt.subplots_adjust(wspace=0.5)
 colors = custom_palette
 labels = [
@@ -134,8 +134,10 @@ ax[0].set_ylim(3e-6, 7e-2)
 ax[1].set_ylim(3e-6, 7e-2)
 ax[2].set_ylim(3e-5, 7e-1)
 
-ax[1].set_xlabel("$l_\mathrm{e} / R_\mathrm{n}$", fontsize=12)
-ax[0].set_ylabel("Error Statistics")
+ax[1].set_xlabel(r"$l_\mathrm{e} / R_\mathrm{n}$", fontsize=12)
+ax[0].set_title("RMSE")
+ax[1].set_title("RMSE(Peak)")
+ax[2].set_title("MaxAE(Peak)")
 plt.tight_layout()
 plt.show()
 
