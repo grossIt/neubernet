@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14880154.svg)](https://doi.org/10.5281/zenodo.14880154)
+
 # NeuberNet
 
 *A Neural Operator for Solving Elastic-Plastic PDEs at V-Notches from Low-Fidelity Elastic Simulations*
