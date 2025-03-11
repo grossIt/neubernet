@@ -49,7 +49,7 @@ Simply unzip the dataset into the repository folder.
 
 ## Usage
 
-The scripts in the repository are named sequentially (e.g., `s1_generate_input_files.py`, `s2_ansys_database_macro.mac`, `s3_import_database.py`) to indicate the order in which they should be executed to reproduce the findings of the paper.
+The scripts in the repository are named sequentially (e.g., `s1_generate_input_files.py`, `s2_ansys_database_macro.mac`, `s3_import_database.py`) to indicate the order in which they should be executed to reproduce the findings of the paper. Each script should be executed from its respective directory.
 
 ---
 
