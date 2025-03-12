@@ -75,14 +75,14 @@ neubernet/
 │   │   ├── neubernet_losses.pt
 │   │   ├── yieldnet.pt
 │   │   ├── yieldnet_losses.pt
-│   │   ├── signsvm.pt
-│   │   ├── signsvm_accuracies.pt
+│   │   ├── signnet.pt
+│   │   ├── signnet_accuracies.pt
 │   ├── utils/
 │   │   ├── definitions.py
 │   │   ├── training.py
 │   ├── s5_neubernet_training.py
 │   ├── s6_yieldnet_training.py
-│   ├── s7_signsvm_training.py
+│   ├── s7_signnet_training.py
 ├── validation/                 
 │   ├── utils/
 │   │   ├── helper_funcs.py
