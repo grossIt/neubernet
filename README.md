@@ -40,10 +40,13 @@ by T. Grossi, M. Beghini, and M. Benedetti.
      conda activate neubernet
      ```
 
-Please note that an installation of ANSYS Mechanical is required to execute the APDL macros related to the FE analyses.
+All machine learning scripts were run using the CUDA Toolkit 12.4 compute platform. If a compatible CUDA device is not available, training and inference will run on the CPU, though with an orders-of-magnitude increase in execution time. While this may still be acceptable for inference, full training on a CPU is strongly discouraged. Using the provided scripts, training runs at approximately 100 epochs per day on an RTX 4090 GPU.
+Please note that ANSYS Mechanical must be installed to execute the APDL macros related to the FE analyses.
 
 The FE dataset, along with all intermediate and final results, is available in this [Zenodo](https://doi.org/10.5281/zenodo.14880154) folder.
 Simply unzip the dataset into the repository folder.
+
+The `config.yaml` file centralizes all settings, allowing for easy tuning of the entire process.
 
 ---
 
