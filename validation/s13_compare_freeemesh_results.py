@@ -109,9 +109,9 @@ for i, (df, label) in enumerate(
     zip([rms_error, rms_error_on_max_values, max_error_on_max_values], labels)
 ):
     for j, column in enumerate(df.columns):
-        if j < 6:
+        if 2 <= j < 8:
             color = colors[0]
-        elif j < 12:
+        elif 8 <= j < 14:
             color = colors[1]
         else:
             color = colors[2]
